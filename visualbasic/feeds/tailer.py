@@ -1,5 +1,6 @@
 import time
 from parser import w3c
+import sys
 
 class Plugin(object):
     def __init__(self, Storage):
@@ -8,7 +9,8 @@ class Plugin(object):
             self.file = open(self.filepath)
             self.storage = Storage()
         except Exception as e:
-            print(e)
+            print(sys.modules[__name__], e)
+            raise
 
     def __follow(self):
         self.file.seek(0, 2)
@@ -23,6 +25,8 @@ class Plugin(object):
         try:
             p = w3c.Parser()
             for line in self.__follow():
-                self.storage.push(p.get_key(line, 'uri'), str(time.time()))
+                if not self.storage.push(p.get_key(line, 'uri'), str(time.time())):
+                    return False
         except Exception as e:
             print(e)
+            raise

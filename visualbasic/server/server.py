@@ -6,7 +6,7 @@ import tornado.ioloop
 import tornado.web
 import redis
 import json
-import datetime
+import sys
 import time
 import logging
 import syslog
@@ -70,7 +70,8 @@ class Server(object):
             threading.Thread(target=analyzers_executor, args=(self.storage,)).start()
 
         except Exception as e:
-            print(e)
+            print(sys.modules[__name__], e)
+            raise
 
 
     def run(self):
@@ -79,5 +80,5 @@ class Server(object):
             http_server.listen(8888)
             main_loop = tornado.ioloop.IOLoop.instance().start()
         except Exception as e:
-            print(e)
+            print(sys.modules[__name__], e)
     
