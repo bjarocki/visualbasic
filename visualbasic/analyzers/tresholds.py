@@ -3,7 +3,7 @@ import json
 
 class Plugin(object):
     def __init__(self, websocket_clients, storage_object):
-        self.run_every = 3
+        self.run_every = 10
         self.limit_of_last_requests = 10000
         self.storage = storage_object()
         self.waiters = websocket_clients
@@ -12,11 +12,14 @@ class Plugin(object):
             'above': 100
         }
 
+    def __records_newer_than(self, data, time_limit):
+        return len([ v for v in data if int(float(v)) > int(time_limit) ])
+
     def __times_per_second(self, data):
         try:
-            return len(data) / (float(data[0]) - float(data[len(data) - 1]))
+            return self.__records_newer_than(data, time.time() - self.run_every) / self.run_every
         except:
-            return None
+            return 0
                 
     def __get_uri_times(self, uri):
         try:
