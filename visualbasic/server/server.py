@@ -1,3 +1,5 @@
+import multiprocessing 
+import threading
 import tornado.httpserver
 import tornado.websocket
 import tornado.ioloop
@@ -7,45 +9,75 @@ import json
 import datetime
 import time
 import logging
+import syslog
+import traceback
+
+import feeds
+from feeds import *
+
+import analyzers
+from analyzers import *
+
+from storage import RedisStorage as Storage
+
+waiters = set()
+
+def feed_executor(plugin_name, storage_object):
+    try:
+        p = getattr(feeds, plugin_name).Plugin(storage_object)
+        return(p.run())
+    except Exception as e:
+        syslog.syslog(
+            syslog.LOG_ERR,
+            "Exception %s %r" % (e, traceback.format_exc(800))
+        )
+
+def analyzers_executor(storage_object):
+    for analyzer in analyzers.__all__:
+        try:
+            p = getattr(analyzers, analyzer).Plugin(waiters, storage_object)
+            return(p.run())
+        except Exception as e:
+            syslog.syslog(
+                syslog.LOG_ERR,
+                "Exception %s %r" % (e, traceback.format_exc(800))
+            )
 
 class WSHandler(tornado.websocket.WebSocketHandler):
-    waiters = set()
 
     def allow_draft76(self):
-        # for iOS 5.0 Safari
         return True
 
     def open(self):
-        WSHandler.waiters.add(self)
+        waiters.add(self)
 
     def on_close(self):
-        WSHandler.waiters.remove(self)
-
-    @classmethod
-    def send_updates(cls, chat):
-        logging.info("sending message to %d waiters", len(cls.waiters))
-        for waiter in cls.waiters:
-            try:
-                if waiter.get_argument('type', default='client') == 'client':
-                    waiter.write_message(chat)
-            except:
-                logging.error("Error sending message", exc_info=True)
-
-    def on_message(self, message):
-        WSHandler.send_updates(message)
-
+        waiters.remove(self)
 
 class Server(object):
     def __init__(self):
-        self.application = tornado.web.Application([
-            (r'/', WSHandler),
-        ])
+        try:
+            self.application = tornado.web.Application([
+                (r'/', WSHandler),
+            ])
+    
+            self.feeders_pool = multiprocessing.Pool()
+            self.storage = Storage.Storage
+
+            for feeder in feeds.__all__:
+                self.feeders_pool.apply_async(feed_executor, args=(feeder, self.storage, ))
+
+            threading.Thread(target=analyzers_executor, args=(self.storage,)).start()
+
+        except Exception as e:
+            print(e)
+
 
     def run(self):
         try:
             http_server = tornado.httpserver.HTTPServer(self.application)
             http_server.listen(8888)
             main_loop = tornado.ioloop.IOLoop.instance().start()
-        except:
-            raise
+        except Exception as e:
+            print(e)
     
