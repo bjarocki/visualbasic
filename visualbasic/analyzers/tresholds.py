@@ -7,7 +7,10 @@ class Plugin(object):
         self.limit_of_last_requests = 10000
         self.storage = storage_object()
         self.waiters = websocket_clients
-
+        self.tresholds = {
+            'below': 10,
+            'above': 100
+        }
 
     def __times_per_second(self, data):
         try:
@@ -27,6 +30,18 @@ class Plugin(object):
         except:
             return []
 
+    def __apply_alerts(self, uris):
+        for uri in uris:
+            try:
+                if uris[uri]['requests_per_seconds'] < self.tresholds['below']:
+                    uris[uri]['status'] = 'ALERT'
+                elif uris[uri]['requests_per_seconds'] > self.tresholds['above']:
+                    uris[uri]['status'] = 'ALERT'
+                else:
+                    uris[uri]['status'] = 'OK'
+            except:
+                pass
+
     def __send_to_waiters(self, data):
         for waiter in self.waiters:
             try:
@@ -39,6 +54,9 @@ class Plugin(object):
         while True:
             time.sleep(self.run_every)
             for uri in self.__get_uris():
-                structure[uri] = self.__times_per_second(self.__get_uri_times(uri))
+                structure[uri] = {
+                    'requests_per_seconds': self.__times_per_second(self.__get_uri_times(uri))
+                }
+            self.__apply_alerts(structure)
             self.__send_to_waiters(structure)
 
