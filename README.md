@@ -12,3 +12,4 @@ visualbasic
  * *settings*: move hardcoded settings into configuration file
  * *requirements.txt*: missing requirements list
  * *setup.py*: missing pip setup
+ * *unit tests*: basic unit testing covering
