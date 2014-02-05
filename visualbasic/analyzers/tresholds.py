@@ -48,7 +48,7 @@ class Plugin(object):
     def __send_to_waiters(self, data):
         for waiter in self.waiters:
             try:
-                waiter.write_message(data)
+                waiter.write_message(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
             except Exception as e:
                 print(e)
 
