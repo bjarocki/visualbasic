@@ -2,7 +2,9 @@ import time
 from parser import w3c
 import sys
 
+
 class Plugin(object):
+
     def __init__(self, Storage):
         try:
             self.filepath = '/tmp/test.log'
@@ -15,11 +17,11 @@ class Plugin(object):
     def __follow(self):
         self.file.seek(0, 2)
         while True:
-             line = self.file.readline()
-             if not line:
-                 time.sleep(0.1)
-                 continue
-             yield line
+            line = self.file.readline()
+            if not line:
+                time.sleep(0.1)
+                continue
+            yield line
 
     def run(self):
         try:

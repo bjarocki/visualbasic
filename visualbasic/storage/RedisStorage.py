@@ -1,6 +1,8 @@
 import redis
 
+
 class Storage(object):
+
     def __init__(self):
         try:
             self.redis_host = 'localhost'
@@ -16,12 +18,19 @@ class Storage(object):
 
     def __initial_connection(self):
         "Setup initial connection to redis backend"
-        return redis.StrictRedis(host=self.redis_host, port=self.redis_port, db=self.redis_db)
+        return (
+            redis.StrictRedis(
+                host=self.redis_host,
+                port=self.redis_port,
+                db=self.redis_db)
+        )
 
     def __register_key(self, key):
         "Add key to the list"
         try:
-            self.r.sadd(self.__name_to_redis_key(self.redis_keys_list_name), key)
+            self.r.sadd(
+                self.__name_to_redis_key(self.redis_keys_list_name),
+                key)
             return True
         except:
             return False
@@ -50,6 +59,9 @@ class Storage(object):
     def get_keys(self):
         "Get a list of all keys"
         try:
-            return self.r.smembers(self.__name_to_redis_key(self.redis_keys_list_name))
+            return (
+                self.r.smembers(
+                    self.__name_to_redis_key(self.redis_keys_list_name))
+            )
         except:
             return []

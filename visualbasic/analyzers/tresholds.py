@@ -1,7 +1,9 @@
 import time
 import json
 
+
 class Plugin(object):
+
     def __init__(self, websocket_clients, storage_object):
         self.run_every = 10
         self.limit_of_last_requests = 10000
@@ -13,14 +15,18 @@ class Plugin(object):
         }
 
     def __records_newer_than(self, data, time_limit):
-        return len([ v for v in data if int(float(v)) > int(time_limit) ])
+        return len([v for v in data if int(float(v)) > int(time_limit)])
 
     def __times_per_second(self, data):
         try:
-            return self.__records_newer_than(data, time.time() - self.run_every) / self.run_every
+            return (
+                self.__records_newer_than(
+                    data,
+                    time.time() - self.run_every) / self.run_every
+            )
         except:
             return 0
-                
+
     def __get_uri_times(self, uri):
         try:
             return self.storage.get(uri, self.limit_of_last_requests)
@@ -48,7 +54,8 @@ class Plugin(object):
     def __send_to_waiters(self, data):
         for waiter in self.waiters:
             try:
-                waiter.write_message(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
+                waiter.write_message(
+                    json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
             except Exception as e:
                 print(e)
 
@@ -58,8 +65,8 @@ class Plugin(object):
             time.sleep(self.run_every)
             for uri in self.__get_uris():
                 structure[uri] = {
-                    'requests_per_seconds': self.__times_per_second(self.__get_uri_times(uri))
+                    'requests_per_seconds':
+                    self.__times_per_second(self.__get_uri_times(uri))
                 }
             self.__apply_alerts(structure)
             self.__send_to_waiters(structure)
-
